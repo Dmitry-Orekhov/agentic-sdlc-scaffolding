@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-sdlc-scaffolding"
+version = "0.0.0"
+description = "Baseline directory structure for multi-agent SDLC workflows with Cursor."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.15.13",
+]
+
+[tool.setuptools]
+# No importable packages yet; adjust when adding a `src/` layout package.
+packages = []
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"

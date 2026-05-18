@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+agentic_sdlc_scaffolding.egg-info/PKG-INFO
+agentic_sdlc_scaffolding.egg-info/SOURCES.txt
+agentic_sdlc_scaffolding.egg-info/dependency_links.txt
+agentic_sdlc_scaffolding.egg-info/requires.txt
+agentic_sdlc_scaffolding.egg-info/top_level.txt

@@ -7,15 +7,14 @@ It is the single source of truth for agent behavior, boundaries, and verificatio
 
 ## Project Overview
 
-> **Replace this section** with a concise description of your project:
-> what it does, its tech stack, and its primary architectural patterns.
+> Expand this block as the application grows. Below are scaffolding defaults (Python tooling).
 
 ```
-Project name:  <your-project>
-Tech stack:    <language / framework / runtime>
-Package mgr:   <npm | pnpm | yarn | pip | cargo | ...>
-Test runner:   <vitest | pytest | cargo test | ...>
-Lint / format: <eslint | ruff | clippy | ...>
+Project name:  agentic-sdlc-scaffolding
+Tech stack:    Python 3.11+ (scaffolding)
+Package mgr:   pip (pyproject.toml) / uv
+Test runner:   <pytest | ...>   # add when tests exist
+Lint / format: ruff
 CI:            <GitHub Actions | GitLab CI | ...>
 ```
 
@@ -24,8 +23,9 @@ CI:            <GitHub Actions | GitLab CI | ...>
 ## Essential Commands
 
 ```bash
-# Install dependencies
-<install-command>
+# Install dependencies (use a virtual environment)
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
 
 # Build
 <build-command>
@@ -34,7 +34,10 @@ CI:            <GitHub Actions | GitLab CI | ...>
 <test-command>
 
 # Lint & format
-<lint-command>
+ruff check .
+ruff check . --fix    # optional: apply safe fixes
+ruff format .         # write formatted files
+ruff check . && ruff format --check .   # CI-style: lint + format check only
 
 # Type-check (if applicable)
 <typecheck-command>

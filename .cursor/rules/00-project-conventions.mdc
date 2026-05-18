@@ -8,11 +8,10 @@ alwaysApply: true
 ## Commands
 
 ```bash
-# Replace with your actual commands
 build:     <build-command>
 test:      <test-command>        # Prefer targeting a single file for speed
 typecheck: <typecheck-command>
-lint:      <lint-command>
+lint:      ruff check . && ruff format --check .
 ```
 
 ## Directory Layout
