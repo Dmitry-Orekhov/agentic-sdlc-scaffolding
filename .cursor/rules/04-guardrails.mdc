@@ -1,0 +1,41 @@
+---
+description: Hard guardrails — files and patterns agents must never touch without human review.
+alwaysApply: true
+---
+
+# Agent Guardrails
+
+## Protected Paths — Do Not Modify Without Explicit Approval
+
+```
+infra/            Infrastructure-as-code (Terraform, Pulumi, CDK)
+k8s/              Kubernetes manifests
+**/Dockerfile*    Container build definitions
+**/.github/       CI/CD workflows
+**/migrations/    Database migration files
+**/.env*          Environment variable files (never read or log)
+**/secrets/       Secrets and credential stores
+```
+
+If a task requires changing any of the above, **stop and explain why** before proceeding.
+Request explicit confirmation from the user.
+
+## Security Rules
+
+- Never print, log, or embed credentials, tokens, or API keys in code or commit messages.
+- Never disable `eslint-disable`, `# noqa`, or similar suppression comments without explaining why.
+- Never `--force` push to any branch.
+- Never run `DROP`, `TRUNCATE`, or destructive SQL without a safety check.
+
+## Scope Discipline
+
+- Make only changes relevant to the stated task.
+- If you discover an unrelated bug, **note it** in your summary but do not fix it in the same PR.
+- Do not refactor code that is not related to the task at hand.
+
+## Verification Before Every PR
+
+- [ ] No protected paths modified (or explicit approval obtained)
+- [ ] No secrets in diff (`git diff | grep -i 'key\|token\|secret\|password'`)
+- [ ] Change is scoped to the task — no unrelated edits
+- [ ] All tests pass, lint is clean

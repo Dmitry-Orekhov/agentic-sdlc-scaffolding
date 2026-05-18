@@ -1,0 +1,50 @@
+---
+description: Core project conventions — build commands, directory layout, dependency rules. Always applied.
+alwaysApply: true
+---
+
+# Project Conventions
+
+## Commands
+
+```bash
+# Replace with your actual commands
+build:     <build-command>
+test:      <test-command>        # Prefer targeting a single file for speed
+typecheck: <typecheck-command>
+lint:      <lint-command>
+```
+
+## Directory Layout
+
+```
+src/          # Application source code
+tests/        # Test files mirroring src/ structure
+docs/         # Architecture docs and ADRs
+infra/        # Infrastructure-as-code (restricted — see AGENTS.md)
+.cursor/      # Agent configuration (rules, plans, commands, skills, hooks)
+```
+
+## Dependency Rules
+
+- Do **not** add new runtime dependencies without noting them in your task summary.
+- Prefer existing utilities in `src/utils/` before pulling in a new library.
+- Pin exact versions in lock files; never use `*` or `latest`.
+
+## Library Documentation
+
+Use Context7 when writing code that depends on an external library or framework.
+Add `use context7` to your prompt, or ask directly:
+
+```
+use context7 to show me how to set up middleware in Express 5
+use context7 with /vercel/next.js for app router file conventions
+```
+
+This fetches current, version-accurate docs rather than relying on training data.
+
+## After Any Code Change
+
+1. Run typecheck — zero errors required.
+2. Run tests — all must pass.
+3. Run lint — zero warnings required.

@@ -1,0 +1,55 @@
+---
+description: Testing conventions — framework, structure, coverage, and TDD workflow.
+globs: "**/*.test.*,**/*.spec.*,tests/**/*"
+alwaysApply: false
+---
+
+# Testing Conventions
+
+## Framework
+
+- Test runner: `<vitest | jest | pytest | cargo test | ...>`
+- Reference pattern: `tests/example.test.ts`
+
+## File Structure
+
+Mirror the source tree:
+```
+src/services/user-service.ts  →  tests/services/user-service.test.ts
+src/api/users/route.ts        →  tests/api/users/route.test.ts
+```
+
+## TDD Workflow
+
+When practicing test-driven development, follow this sequence strictly:
+
+1. Write tests based on expected input / output pairs.
+2. Run tests and confirm they **fail** — do not write implementation yet.
+3. Commit the tests.
+4. Write implementation code that makes the tests pass.
+5. Do **not** modify existing tests to make them pass.
+6. Commit the implementation once all tests are green.
+
+## What to Test
+
+- **Unit tests**: Pure functions, service logic, utilities — mock external dependencies.
+- **Integration tests**: API routes, DB queries — use a test database or in-memory store.
+- **Do not** test implementation details; test observable behavior.
+
+## Coverage Expectations
+
+- New features: 100% line coverage on business logic.
+- Bug fixes: regression test covering the exact failure path.
+- Avoid coverage gaming — prefer fewer, meaningful assertions over many trivial ones.
+
+## Anti-patterns to Avoid
+
+```typescript
+// ❌ Testing implementation details
+expect(service._privateMethod).toHaveBeenCalled();
+
+// ✅ Testing observable behavior
+const result = await service.createUser(payload);
+expect(result.id).toBeDefined();
+expect(result.email).toBe(payload.email);
+```

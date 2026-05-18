@@ -1,0 +1,56 @@
+---
+description: Code style and architecture patterns for source files.
+globs: src/**/*
+alwaysApply: false
+---
+
+# Code Style
+
+## General Principles
+
+- Prefer **editing existing patterns** over inventing new ones.
+- Point to canonical examples instead of creating abstractions from scratch.
+- Keep functions small and single-purpose; extract helpers to `src/utils/`.
+- Avoid deeply nested logic — prefer early returns and guard clauses.
+
+## Naming
+
+| Concept | Convention | Example |
+|---|---|---|
+| Files | kebab-case | `user-service.ts` |
+| Classes | PascalCase | `UserService` |
+| Functions / vars | camelCase | `getUserById` |
+| Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Types / interfaces | PascalCase | `UserPayload` |
+
+## Imports
+
+- Use ES modules (`import / export`) — never CommonJS `require`.
+- Destructure named exports: `import { foo } from 'bar'`.
+- Group imports: external libs → internal modules → relative paths.
+
+## Error Handling
+
+```typescript
+// ❌ Swallowing errors
+try {
+  await riskyOp();
+} catch (e) {}
+
+// ✅ Log, wrap, and re-throw with context
+try {
+  await riskyOp();
+} catch (e) {
+  logger.error('riskyOp failed', { error: e });
+  throw new AppError('Operation failed', { cause: e });
+}
+```
+
+## Canonical Examples
+
+> Replace these with real paths from your project:
+
+- Component pattern: `src/components/Button.tsx`
+- Service pattern: `src/services/user-service.ts`
+- API route pattern: `src/api/users/route.ts`
+- Test pattern: `src/__tests__/user-service.test.ts`

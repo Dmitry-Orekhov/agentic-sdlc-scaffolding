@@ -1,0 +1,54 @@
+---
+description: Git branching strategy, commit format, and PR conventions.
+alwaysApply: false
+---
+
+# Git Workflow
+
+## Branch Strategy
+
+```
+main       ← production-ready; PRs only, never direct commits
+develop    ← integration; PRs from feature branches
+feat/*     ← new features
+fix/*      ← bug fixes
+chore/*    ← non-functional changes (deps, config, docs, refactor)
+```
+
+## Commit Message Format (Conventional Commits)
+
+```
+<type>(<scope>): <short imperative summary, ≤72 chars>
+
+[optional body — explain WHY, not what]
+
+[optional footer]
+BREAKING CHANGE: <description>
+Closes #<issue-number>
+```
+
+**Types**: `feat` | `fix` | `docs` | `style` | `refactor` | `test` | `chore`
+
+### Examples
+
+```
+feat(auth): add OAuth2 login with GitHub provider
+fix(api): handle null response from upstream payment service
+chore(deps): update vitest to v2.1.0
+```
+
+## Pull Request Rules
+
+- PRs must target `develop` (not `main`) unless it is a hotfix.
+- Title follows the same Conventional Commits format as commit messages.
+- Body must include: **What changed**, **Why**, **How to test**.
+- At least one human approval required before merge.
+- CI must be green: typecheck + tests + lint.
+
+## Agent-Generated PRs
+
+When an agent creates a PR via `/pr` command:
+
+1. The agent runs `git diff`, writes a commit message, commits, and pushes.
+2. It opens a PR with `gh pr create` and returns the URL.
+3. A human reviews the diff before merging — agents do not self-merge.
