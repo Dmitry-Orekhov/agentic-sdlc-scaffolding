@@ -111,6 +111,13 @@ Every agent-authored change MUST satisfy all of the following before raising a P
 
 For non-trivial tasks, use **Plan Mode** (`Shift+Tab` in agent input):
 
+**Plan Mode UI is not the same as a file on disk.** Reviewing or approving a plan in the
+Plan Mode panel does **not** by itself create anything under `.cursor/plans/`. After
+approval, either ask the agent to write the plan to `.cursor/plans/YYYY-MM-DD-<slug>.md`,
+or use Cursor's **Save to workspace** (or equivalent) on the plan and save it into
+`.cursor/plans/` with that naming convention. Until one of those happens, the plan exists
+only in the chat/Plan UI.
+
 1. Research the codebase to find relevant files.
 2. Ask clarifying questions if requirements are ambiguous.
 3. Produce a plan with file paths and code references.
