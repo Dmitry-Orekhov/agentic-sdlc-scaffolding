@@ -12,16 +12,16 @@ coupling and weak audit boundaries.
 
 | Tier | Responsibility | Technology |
 |---|---|---|
-| **1 — Workflow** | Sub-DAGs, HITL gates, case state, timeouts | See [ADR-001](../adr/ADR-001-workflow-orchestration.md) |
-| **2 — Agent reasoning** | LangGraph graphs per workflow step | LangGraph / LangChain |
+| **1 — Workflow** | Sub-DAGs, HITL gates, case state, timeouts | Temporal — see [ADR-001](../adr/ADR-001-workflow-orchestration.md) |
+| **2 — Agent reasoning** | Business-flow Agents orchestrating Reasoning-flow Skills | LangGraph / LangChain |
 
 ---
 
-## Tier 1 — Workflow-level
+## Tier 1 — Workflow-level (Temporal)
 
 - Models the end-to-end **case** as a graph of steps (sub-DAGs).
-- Invokes Tier 2 agent graphs as **activities** or child workflows.
-- Owns **HITL gates**: elicitation, review, sign-off before side effects.
+- Triggers **Business-flow Agents** as Temporal activities.
+- Owns **HITL gates**: In-Agent HITL decisions (sign-off, mid-flow review, routing confirmation) before side effects — placement TBD per [ADR-006](../adr/ADR-006-in-agent-hitl-placement.md).
 - Emits audit events for state transitions.
 
 **Decision:** [ADR-001: Temporal](../adr/ADR-001-workflow-orchestration.md) for durable workflow execution.
@@ -30,19 +30,45 @@ coupling and weak audit boundaries.
 
 ## Tier 2 — Agent reasoning (LangGraph)
 
-- One LangGraph graph (or compiled subgraph) per agent **step type**.
-- Handles tool calls to [integrations.md](integrations.md) via ports.
-- Uses **native HITL** support: interrupts, resume with human-provided input, checkpointing.
+Tier 2 has two levels within LangGraph:
+
+### Business-flow Agents
+
+- One LangGraph **graph** per business flow (Intake, Response, Route to SME, Quality Assurance, Insight).
+- Triggered by Temporal as an activity; returns a typed result back to Tier 1.
+- Orchestrates Reasoning-flow Skills internally — selecting and sequencing the subset needed for that flow.
+- Owns the fan-out of parallel work (e.g. processing multiple documents) via LangGraph `Send`.
 - Checkpoints stored through the persistence abstraction ([persistence.md](persistence.md)).
+
+### Reasoning-flow Skills
+
+- Composable **subgraphs** with a defined interface: typed input/output and declared port dependencies.
+- Available skills: Ingest, Parse & Validate, Enrichment, Elicitation, Q&A, Proposal.
+- Not a fixed pipeline — each Business-flow Agent assembles the skills it needs.
+- Handle tool calls to [integrations.md](integrations.md) via ports.
+- Use **In-Skill HITL**: interrupts, resume with human-provided input, per-subgraph checkpointing.
+
+---
+
+## Execution chain
+
+```
+Temporal Workflow
+  └── Business-flow Agent (LangGraph graph)
+        ├── Skill A (subgraph)  ─→ Port → Adapter → External system
+        ├── Skill B (subgraph)  ─→ Port → Adapter → External system
+        └── [parallel via Send: Skill A × N documents]
+```
 
 ---
 
 ## Interaction rules
 
-1. Workflow code **starts** and **awaits** agent steps; it does not embed LLM prompts in DAG definitions.
-2. LangGraph graphs **do not** own case lifecycle or final sign-off policy.
-3. Human approval that commits external changes must be recorded in **Tier 1** state after Tier 2
-   produces a proposal.
+1. Temporal **starts** and **awaits** Business-flow Agents; it does not embed LLM prompts in DAG definitions.
+2. Business-flow Agents **compose** Skills; they do not re-implement skill logic inline.
+3. Skills **do not** own case lifecycle or final sign-off policy — those stay in Tier 1.
+4. Human approval that commits external changes must be recorded in **Tier 1** state — In-Agent HITL
+   placement is resolved in [ADR-006](../adr/ADR-006-in-agent-hitl-placement.md).
 
 ---
 

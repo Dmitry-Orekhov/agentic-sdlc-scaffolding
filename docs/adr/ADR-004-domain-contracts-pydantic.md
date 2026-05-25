@@ -17,7 +17,7 @@
 ## Context
 
 Data crosses several boundaries: REST API, Temporal workflows, LangGraph agent state, and external
-adapters (Salesforce, DataHub, AI Gateway). Ad hoc `dict` payloads cause schema drift, weak
+adapters (SOR, SOR metadata, AI Gateway). Ad hoc `dict` payloads cause schema drift, weak
 validation, and poor agent-generated code quality.
 
 ---

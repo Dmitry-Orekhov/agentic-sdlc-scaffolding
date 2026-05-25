@@ -57,6 +57,8 @@ accepted records.
 | [ADR-002](../adr/ADR-002-openshift-persistence.md) | Agent state persistence on OpenShift | accepted |
 | [ADR-003](../adr/ADR-003-api-versioning-idempotency.md) | Public REST versioning & idempotency | accepted |
 | [ADR-004](../adr/ADR-004-domain-contracts-pydantic.md) | Domain contracts (Pydantic) | accepted |
+| [ADR-005](../adr/ADR-005-reasoning-flow-skills.md) | Reasoning-flow Skills as composition unit | accepted |
+| [ADR-006](../adr/ADR-006-in-agent-hitl-placement.md) | In-Agent HITL placement | proposed |
 
 ---
 

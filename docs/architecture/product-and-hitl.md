@@ -28,21 +28,46 @@ Implementation expectations:
 - Pausing, resuming, and timeout behavior must be **durable** (see [persistence.md](persistence.md)).
 - Audit must record **what** was proposed, **who** decided, and **when** (see
   [observability.md](observability.md)).
-- LangGraph **interrupts** and workflow-level **signals** are first-class mechanisms—see
+- Two HITL patterns are defined: **In-Skill HITL** (scoped to a Reasoning-flow Skill instance)
+  and **In-Agent HITL** (scoped to a Business-flow Agent — sign-off, mid-flow review, routing
+  confirmation). See [agents.md](agents.md) and [ADR-006](../adr/ADR-006-in-agent-hitl-placement.md).
+- LangGraph **interrupts** and workflow-level **signals** are first-class mechanisms — see
   [orchestration.md](orchestration.md).
 
 ---
 
-## Typical agent responsibilities
+## Agent taxonomy
 
-| Area | Agent role |
+### Business-flow Agents
+
+Each Business-flow Agent is a **LangGraph graph** mapped to one top-level business flow.
+They are triggered by the Temporal orchestrator as activities and compose Reasoning-flow
+Skills internally.
+
+| Agent | Responsibility |
 |---|---|
-| Intake | Accept documents from email and external storage |
-| Parse & validate | Extract structure, check completeness against rules/metadata |
-| Enrich | Call external tools and SORs for additional data |
-| Q&A | Answer bounded questions using KB/RAG and case context |
-| Elicitation | Request human input when data is missing or ambiguous |
-| Proposal | Package recommendations for human sign-off |
+| **Intake** | Accept and route incoming documents from email and external storage |
+| **Response** | Produce a human-reviewed response or outcome for a case |
+| **Route to SME** | Determine and assign the appropriate subject-matter expert |
+| **Quality Assurance** | Validate case handling quality against defined criteria |
+| **Insight** | Aggregate analytics to identify improvements across the whole flow |
+
+---
+
+### Reasoning-flow Skills
+
+Skills are **composable subgraphs** with a defined interface (typed input/output, declared
+port dependencies). Business-flow Agents are not required to use all skills — each flow
+assembles the subset it needs. Skills are not a fixed pipeline.
+
+| Skill | Responsibility |
+|---|---|
+| **Ingest** | Accept and normalise raw input (documents, payloads) |
+| **Parse & Validate** | Extract structure; check completeness against rules and SOR metadata |
+| **Enrichment** | Call external tools and SORs to add missing or supporting data |
+| **Elicitation** | Interrupt flow and request human input when data is missing or ambiguous |
+| **Q&A** | Answer bounded questions using KB/RAG and case context |
+| **Proposal** | Package reasoning output into a structured recommendation for human sign-off |
 
 ---
 

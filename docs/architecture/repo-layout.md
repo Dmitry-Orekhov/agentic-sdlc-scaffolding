@@ -20,7 +20,7 @@ src/
   agents/           # LangGraph graph definitions and nodes
   domain/           # Pydantic models, enums, shared errors
   ports/            # Abstract interfaces (Protocols / ABCs)
-  adapters/         # Port implementations (Salesforce, DataHub, AI Gateway, …)
+  adapters/         # Port implementations (SOR, SOR metadata, AI Gateway, …)
   persistence/      # State store abstraction and backends
   intake/           # Email and external storage ingestion
   config/           # Settings loading per environment
@@ -45,7 +45,7 @@ map unless an ADR or feature architecture doc defines an exception.
 |---|---|
 | Dependency direction | `api` → `workflow` → `agents` → `ports` ← `adapters`; `domain` imported by all, imports nothing outward |
 | No vendor SDKs in `domain` or `ports` | SDKs only in `adapters` |
-| One port per external capability | e.g. `SalesforcePort`, `DataHubPort`, `LlmPort`, `RagPort` |
+| One port per external capability | e.g. `SorPort`, `SorMetadataPort`, `LlmPort`, `RagPort` |
 | Fakes required | Every port has a `tests/fakes/` or `adapters/fake_*` implementation |
 
 ---
