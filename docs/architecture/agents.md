@@ -21,7 +21,8 @@ graph TD
     TMP["Temporal (workflow orchestrator)"]
     TMP -->|activity input| BFA["Business-flow Agent (LangGraph graph)"]
     BFA -->|Send / sequential| SK["Reasoning-flow Skill (LangGraph subgraph)"]
-    SK -->|tool call| PT["Port (Protocol)"]
+    SK -->|tool call| TL["Tool (LangChain Tool)"]
+    TL -->|invoke| PT["Port (Protocol)"]
     PT -->|adapter| EX["External system"]
     SK -->|HITL interrupt| HU["Human operator"]
     HU -->|resume + decision| SK
@@ -55,14 +56,14 @@ Skills are composable LangGraph **subgraphs** with a defined interface: typed in
 output, and declared port dependencies. They live in `src/agents/skills/` and are shared
 across Business-flow Agents.
 
-| Skill | Responsibility | Key ports |
+| Skill | Responsibility | Key tools |
 |---|---|---|
-| **Ingest** | Accept and normalise raw input (documents, payloads) | `EmailPort`, `StoragePort` |
-| **Parse & Validate** | Extract structure; check completeness against rules and SOR metadata | `LlmPort`, `SorMetadataPort` |
-| **Enrichment** | Call external tools and SORs to add missing or supporting data | `LlmPort`, `SorPort`, `RagPort` |
-| **Elicitation** | Interrupt flow and request human input when data is missing or ambiguous | `LlmPort`, `SorMetadataPort` |
-| **Q&A** | Answer bounded questions using KB/RAG and case context | `LlmPort`, `RagPort` |
-| **Proposal** | Package reasoning output into a structured recommendation for human sign-off | `LlmPort`, `SorPort` |
+| **Ingest** | Accept and normalise raw input (documents, payloads) | `EmailTool`, `StorageTool` |
+| **Parse & Validate** | Extract structure; check completeness against rules and SOR metadata | `LlmTool`, `SorMetadataTool` |
+| **Enrichment** | Call external tools and SORs to add missing or supporting data | `LlmTool`, `SorTool`, `RagTool` |
+| **Elicitation** | Interrupt flow and request human input when data is missing or ambiguous | `LlmTool`, `SorMetadataTool` |
+| **Q&A** | Answer bounded questions using KB/RAG and case context | `LlmTool`, `RagTool` |
+| **Proposal** | Package reasoning output into a structured recommendation for human sign-off | `LlmTool`, `SorTool` |
 
 Skills are not a fixed pipeline. Each Business-flow Agent assembles the subset it needs.
 
@@ -98,21 +99,46 @@ populated.
 
 ---
 
+## Tools
+
+Tools are **LangChain Tool objects** that wrap a port call and expose a `name`, `description`, and `args_schema` to the LLM. They sit between a skill's reasoning nodes and the port layer, enabling the LLM to dynamically select and invoke capabilities rather than calling ports imperatively.
+
+- Tools live in `src/agents/tools/` and are shared across Skills.
+- Each Tool wraps exactly one Port method; it accepts and returns domain types from `src/domain/`.
+- Skills receive their tools at compose time alongside their ports — the same injection pattern.
+- LangSmith traces tool invocations as first-class events (name, inputs, outputs, latency).
+
+```python
+# src/agents/tools/llm_tool.py
+from langchain_core.tools import tool
+from src.domain import LlmRequest, LlmResponse
+from src.ports import LlmPort
+
+def build_llm_tool(llm_port: LlmPort):
+    @tool
+    def llm_invoke(request: LlmRequest) -> LlmResponse:
+        """Invoke the LLM with a structured request."""
+        return llm_port.invoke(request)
+    return llm_invoke
+```
+
+---
+
 ## Skill interface convention
 
-Every skill exposes a factory function injected with its required ports at compose time:
+Every skill exposes a factory function injected with its required tools at compose time:
 
 ```python
 # src/agents/skills/parse_validate/graph.py
 def build_parse_validate_graph(
-    llm_port: LlmPort,
-    sor_metadata_port: SorMetadataPort,
+    llm_tool: LlmTool,
+    sor_metadata_tool: SorMetadataTool,
 ) -> CompiledGraph:
     ...
 ```
 
 Input and output types are Pydantic domain models from `src/domain/`. Skills never import
-from `src/adapters/` — ports are injected by the composition root.
+from `src/adapters/` — tools (and the ports they wrap) are injected by the composition root.
 
 ---
 
@@ -151,7 +177,9 @@ All durable state between pause and resume is stored through `src/persistence/`.
 Temporal Workflow
   └── Business-flow Agent (LangGraph graph)
         ├── [sequential] Skill A → typed output → parent state
+        │     └── Tool → Port → Adapter → External system
         ├── [sequential] Skill B → typed output → parent state
+        │     └── Tool → Port → Adapter → External system
         └── [parallel via Send] Skill C × N → reducer → parent state
               each instance: local state, isolated checkpoint, scoped HITL
 ```
