@@ -171,15 +171,29 @@ All durable state between pause and resume is stored through `src/persistence/`.
 
 ---
 
+## Fakes
+
+Every Port that a Skill declares must ship with a **fake adapter** in `tests/fakes/` before merge (see [quality-and-delivery.md](quality-and-delivery.md)). Fakes implement the same Port protocol as real adapters and replace them at test time — no real external calls in unit tests or default CI.
+
+| Context | Port is backed by |
+|---|---|
+| Runtime | Adapter → External system |
+| Unit / CI tests | Fake (in-memory, deterministic) |
+| Integration (optional) | Real sandbox, tagged `@pytest.mark.external` |
+
+Tools are injected with fakes the same way as with real adapters — the injection pattern is identical, so Skills are unaware of which backing is active.
+
+---
+
 ## Execution chain
 
 ```
 Temporal Workflow
   └── Business-flow Agent (LangGraph graph)
         ├── [sequential] Skill A → typed output → parent state
-        │     └── Tool → Port → Adapter → External system
+        │     └── Tool → Port → Adapter (runtime) / Fake (tests) → External system
         ├── [sequential] Skill B → typed output → parent state
-        │     └── Tool → Port → Adapter → External system
+        │     └── Tool → Port → Adapter (runtime) / Fake (tests) → External system
         └── [parallel via Send] Skill C × N → reducer → parent state
               each instance: local state, isolated checkpoint, scoped HITL
 ```
@@ -207,4 +221,5 @@ before any LLM call. See [observability.md](observability.md) for the full audit
 - [product-and-hitl.md](product-and-hitl.md)
 - [persistence.md](persistence.md)
 - [observability.md](observability.md)
+- [quality-and-delivery.md](quality-and-delivery.md)
 - [ADR-005](../adr/ADR-005-reasoning-flow-skills.md)
