@@ -1,6 +1,6 @@
 ---
 description: Git branching strategy, commit format, and PR conventions.
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Git Workflow

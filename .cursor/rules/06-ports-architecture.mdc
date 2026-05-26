@@ -1,0 +1,55 @@
+---
+description: Architecture constraints for port definitions. Applied when editing src/ports/.
+globs: src/ports/**/*
+alwaysApply: false
+---
+
+# Port Layer Architecture
+
+**Before writing any code here, read all of the following:**
+
+- `docs/architecture/integrations.md` — port–adapter design principles P1–P6
+- `docs/architecture/quality-and-delivery.md` — fake-before-merge requirement
+- `docs/adr/ADR-004-domain-contracts-pydantic.md` — why data contracts live in `src/domain/`
+
+## Spec-first workflow
+
+Check for an existing spec in `docs/specs/ports/<port-slug>-spec.md` before writing anything.
+Specs are authored by humans by default. Only draft a spec from
+`docs/specs/templates/port-spec-template.md` if the human explicitly asks you to, and wait
+for approval before saving it or writing any code.
+
+## Non-negotiable constraints
+
+**Structural typing — use `Protocol`, not ABC**
+Define every port as a `typing.Protocol`. Adapters satisfy it structurally — no explicit
+inheritance required (P4). The type checker enforces conformance at usage sites.
+
+```python
+# src/ports/llm.py
+from typing import Protocol
+from src.domain import LlmRequest, LlmResponse
+
+class LlmPort(Protocol):
+    def invoke(self, request: LlmRequest) -> LlmResponse:
+        """Generate a completion for the given request."""
+        ...
+```
+
+**Domain intent only — no vendor details on the interface (P3)**
+Port method signatures express what the domain needs. Technology-specific parameters
+(connection strings, pagination cursors, retry hints, SDK flags) must not appear on a port.
+If a parameter would not appear in a business requirements document, it does not belong here.
+
+**Data contracts in `src/domain/`, not in `src/ports/` (P2)**
+Ports define behavioral contracts. Shared types — Pydantic models, enums, typed errors —
+belong in `src/domain/`. Ports may import from `src/domain/`; ports must never import from
+`src/adapters/` or from each other.
+
+**One port per external capability**
+Add a new port only when adding a genuinely new external capability. Do not overload an
+existing port with unrelated methods.
+
+**Fake required before merge (P5)**
+Every new port must ship with a matching fake in `tests/fakes/` in the same PR.
+The fake must be a working in-memory implementation of the Protocol — not a mock.

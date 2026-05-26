@@ -1,0 +1,58 @@
+---
+description: Architecture constraints for adapter implementations. Applied when editing src/adapters/.
+globs: src/adapters/**/*
+alwaysApply: false
+---
+
+# Adapter Layer Architecture
+
+**Before writing any code here, read all of the following:**
+
+- `docs/architecture/integrations.md` — port–adapter design principles P1–P6
+- `docs/architecture/authentication.md` — Okta M2M token handling
+- `docs/architecture/quality-and-delivery.md` — fake-before-merge requirement
+- `docs/adr/ADR-004-domain-contracts-pydantic.md` — domain contracts and error types
+
+## Spec-first workflow
+
+Check for an existing spec in `docs/specs/adapters/<adapter-slug>-spec.md` before writing
+anything. Specs are authored by humans by default. Only draft a spec from
+`docs/specs/templates/adapter-spec-template.md` if the human explicitly asks you to, and
+wait for approval before saving it or writing any code.
+
+## Non-negotiable constraints
+
+**Satisfy the port structurally — no subclassing (P4)**
+An adapter must match its port's method signatures so the type checker accepts it. Do not
+inherit from the Port Protocol. The composition root is the only place that imports and
+instantiates a concrete adapter — agent and tool modules never import from `src/adapters/`.
+
+```python
+# src/adapters/ai_gateway/llm.py
+class AiGatewayLlmAdapter:           # no explicit (LlmPort) base class
+    def invoke(self, request: LlmRequest) -> LlmResponse:
+        ...
+```
+
+**Vendor SDKs and raw DTOs stay inside the adapter (P2, P3)**
+Vendor SDK types, raw API payloads, and serialization logic must not leak past the adapter
+boundary. Translate raw responses to domain models before returning. Translate inbound domain
+models to vendor formats internally.
+
+**Convert vendor errors to domain errors — no retries (P6)**
+Catch all vendor/SDK exceptions and re-raise as typed domain errors from `src/domain/`.
+Never add retry loops, backoff, or fallback logic inside an adapter — failure policy belongs
+in the workflow orchestration layer.
+
+```python
+try:
+    raw = self._client.complete(prompt=request.prompt)
+except VendorSdkError as exc:
+    raise LlmError(message=str(exc)) from exc   # domain error only
+return LlmResponse(text=raw.text)
+```
+
+**Fake required before merge (P5)**
+Every new adapter must have a corresponding fake in `tests/fakes/` in the same PR.
+The fake implements the same Port Protocol as the real adapter and is used in all unit
+tests and default CI — no real external calls without `@pytest.mark.external`.

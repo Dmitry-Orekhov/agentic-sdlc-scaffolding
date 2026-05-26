@@ -126,6 +126,13 @@ only in the chat/Plan UI.
 5. Once approved, write the plan to `.cursor/plans/YYYY-MM-DD-<slug>.md` using
    `.cursor/plans/TEMPLATE.md` as the structure, then begin implementation.
 
+For any new Port, Tool, Skill, Adapter, or domain model, an approved spec must exist in
+`docs/specs/` before writing implementation code. Check for an existing spec first.
+Specs are authored by humans by default — if none exists, ask the human to provide one.
+Only draft a spec from `docs/specs/templates/` if the human explicitly asks you to, and
+present it for approval before saving or implementing. See `docs/specs/templates/TEMPLATE-README.md`
+for the template-to-artifact mapping and filename conventions.
+
 **Do not save a plan that has not been explicitly approved.**
 A plan file in `.cursor/plans/` is a record of committed, approved work — not a draft.
 
@@ -171,3 +178,5 @@ Clear the file entirely. An empty file means no task is in progress.
 | Agent skills | `.cursor/skills/` |
 | Architecture docs | `docs/architecture/` |
 | Decision records | `docs/adr/` |
+| Spec templates | `docs/specs/templates/` |
+| Approved specs | `docs/specs/` |

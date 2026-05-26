@@ -17,40 +17,83 @@ alwaysApply: false
 
 | Concept | Convention | Example |
 |---|---|---|
-| Files | kebab-case | `user-service.ts` |
-| Classes | PascalCase | `UserService` |
-| Functions / vars | camelCase | `getUserById` |
+| Files / modules | snake_case | `llm_tool.py` |
+| Classes / Pydantic models | PascalCase | `LlmRequest` |
+| Functions / variables | snake_case | `get_case_by_id` |
 | Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
-| Types / interfaces | PascalCase | `UserPayload` |
+| Private helpers | leading underscore | `_build_prompt` |
+
+## Type Hints
+
+All public functions and methods must have complete type annotations:
+
+```python
+# ❌ Missing annotations
+def invoke(request):
+    ...
+
+# ✅ Fully annotated
+def invoke(request: LlmRequest) -> LlmResponse:
+    ...
+```
+
+Use `from __future__ import annotations` at the top of files to enable forward references.
 
 ## Imports
 
-- Use ES modules (`import / export`) — never CommonJS `require`.
-- Destructure named exports: `import { foo } from 'bar'`.
-- Group imports: external libs → internal modules → relative paths.
+Follow PEP 8 import order — separated by blank lines:
+
+```python
+# 1. Standard library
+import os
+from typing import Protocol
+
+# 2. Third-party
+from pydantic import BaseModel
+from langchain_core.tools import tool
+
+# 3. Internal (absolute paths only — no relative imports in src/)
+from src.domain import LlmRequest, LlmResponse
+from src.ports import LlmPort
+```
 
 ## Error Handling
 
-```typescript
-// ❌ Swallowing errors
-try {
-  await riskyOp();
-} catch (e) {}
+```python
+# ❌ Swallowing errors
+try:
+    result = invoke(request)
+except Exception:
+    pass
 
-// ✅ Log, wrap, and re-throw with context
-try {
-  await riskyOp();
-} catch (e) {
-  logger.error('riskyOp failed', { error: e });
-  throw new AppError('Operation failed', { cause: e });
-}
+# ✅ Log with context, wrap, and re-raise
+try:
+    result = invoke(request)
+except Exception as exc:
+    logger.error("invoke failed", extra={"request": request, "error": str(exc)})
+    raise RuntimeError("LLM invocation failed") from exc
 ```
+
+## Pydantic Models
+
+Domain contracts live in `src/domain/` and inherit from `pydantic.BaseModel`:
+
+```python
+from pydantic import BaseModel
+
+class LlmRequest(BaseModel):
+    prompt: str
+    model: str = "gpt-4o"
+```
+
+Never use plain `dict` for domain data that crosses a module boundary.
 
 ## Canonical Examples
 
-> Replace these with real paths from your project:
-
-- Component pattern: `src/components/Button.tsx`
-- Service pattern: `src/services/user-service.ts`
-- API route pattern: `src/api/users/route.ts`
-- Test pattern: `src/__tests__/user-service.test.ts`
+- Domain model: `src/domain/` (Pydantic `BaseModel` subclasses)
+- Port (interface): `src/ports/` (Python `Protocol` or `ABC`)
+- Adapter (implementation): `src/adapters/` (implements a port)
+- Tool (LangChain): `src/agents/tools/` (wraps one port method via `@tool`)
+- Skill (LangGraph subgraph): `src/agents/skills/<skill>/graph.py`
+- Fake adapter (tests): `tests/fakes/` (in-memory port implementation)
+- Unit test: `tests/unit/` mirroring `src/` structure

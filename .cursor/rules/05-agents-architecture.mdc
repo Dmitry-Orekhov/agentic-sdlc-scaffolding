@@ -1,0 +1,88 @@
+---
+description: Architecture constraints for the agent layer. Applied when editing src/agents/.
+globs: src/agents/**/*
+alwaysApply: false
+---
+
+# Agent Layer Architecture
+
+**Before writing any code here, read all of the following:**
+
+- `docs/architecture/agents.md` — agent/skill architecture, state boundaries, factory conventions
+- `docs/architecture/integrations.md` — port/adapter pattern and rules
+- `docs/architecture/quality-and-delivery.md` — fakes-before-merge requirement, test tagging
+- `docs/architecture/persistence.md` — checkpointing and state store API
+- `docs/architecture/observability.md` — LangSmith tag schema (`case_id`, `workflow_id`, `step_id`)
+- `docs/adr/ADR-005-reasoning-flow-skills.md` — why skills are composed as subgraphs
+- `docs/adr/ADR-006-in-agent-hitl-placement.md` — In-Agent HITL placement decision
+
+## Spec-first workflow
+
+Every new artifact (Skill, Tool, Port, Adapter, domain model, persistence, observability)
+must have an approved spec in `docs/specs/` before any implementation code is written.
+
+**Spec authorship rules — read carefully:**
+
+1. **Check first** — before doing anything, look for an existing spec under `docs/specs/`
+   using the filename conventions below. If it exists, use it as-is.
+2. **Humans author specs by default** — if no spec exists, stop and ask the human to
+   provide one. Do not draft a spec on your own initiative.
+3. **Agent-drafted specs require explicit permission** — you may draft a spec from the
+   matching template in `docs/specs/templates/` only if the human explicitly asks you to.
+   Present the draft for review and wait for approval before saving it or writing any code.
+
+| Artifact | Template | Save as |
+|---|---|---|
+| Skill | `skill-spec-template.md` | `docs/specs/skills/<skill-slug>-spec.md` |
+| Tool | `tool-spec-template.md` | `docs/specs/tools/<tool-slug>-spec.md` |
+| Port | `port-spec-template.md` | `docs/specs/ports/<port-slug>-spec.md` |
+| Adapter | `adapter-spec-template.md` | `docs/specs/adapters/<adapter-slug>-spec.md` |
+| Domain model | `domain-contract-spec-template.md` | `docs/specs/domain/<model-slug>-spec.md` |
+| Persistence | `persistence-spec-template.md` | `docs/specs/persistence/<slug>-persistence-spec.md` |
+| Observability | `observability-spec-template.md` | `docs/specs/observability/<slug>-observability-spec.md` |
+
+See `docs/specs/templates/TEMPLATE-README.md` for usage guidance and examples.
+
+## Non-negotiable constraints
+
+**Skill state isolation**
+Skills use skill-local state only. Never read from or write to the parent graph's state directly.
+Parent state is updated only through declared typed output slots.
+
+**No adapter imports in Skills**
+Skills never import from `src/adapters/`. Ports and tools are injected at compose time by the
+composition root — the skill must not know which backing (real adapter or fake) is active.
+
+**Skill factory convention**
+Every skill is a factory function; tools are injected as arguments:
+```python
+# src/agents/skills/<skill>/graph.py
+def build_<skill>_graph(tool_a: ToolA, tool_b: ToolB) -> CompiledGraph: ...
+```
+Input/output types must be Pydantic models from `src/domain/`.
+
+**Tool factory convention**
+Each Tool wraps exactly one Port method:
+```python
+# src/agents/tools/<tool>.py
+def build_<name>_tool(port: SomePort):
+    @tool
+    def <name>(request: RequestType) -> ResponseType:
+        """<one-line description for the LLM>"""
+        return port.method(request)
+    return <name>
+```
+
+**Parallel fan-out**
+Use `Send` + `Annotated[list[T], operator.add]` reducer for parallel skill dispatch.
+Never use threads or asyncio tasks to fan out skills.
+
+**HITL**
+In-Skill interrupts (`interrupt()`) belong only in the Elicitation skill.
+For In-Agent HITL, follow the decision in ADR-006 — do not invent a new pattern.
+
+**Fakes required before merge**
+Every Port a Skill declares must have a matching fake in `tests/fakes/` in the same PR.
+
+**Observability**
+Tag every agent run with `case_id`, `workflow_id`, and `step_id` before the first LLM call.
