@@ -84,12 +84,14 @@ Types: `feat` | `fix` | `docs` | `style` | `refactor` | `test` | `chore`
 
 ## Agent Boundaries — What Agents MUST NOT Do
 
+- **Never** read `README.md` file or any other `*README.md` files. **These files are for humans only!**
 - **Never** modify deployment configuration (`infra/`, `terraform/`, `k8s/`, `Dockerfile`) without explicit human approval.
 - **Never** commit directly to `main` or `develop`.
 - **Never** store or log secrets, credentials, or API keys.
 - **Never** run destructive database migrations without a reviewed migration plan.
 - **Never** install new dependencies without noting them in the task summary for review.
 - **Never** disable or skip linters, type-checkers, or test suites.
+- Don't read or refer `*TEMPLATE*` files without clear and specific human permission 
 
 ---
 
